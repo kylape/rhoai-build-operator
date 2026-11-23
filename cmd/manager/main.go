@@ -62,7 +62,7 @@ func main() {
 	if err := (&controller.RHOAIBuildReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("rhoai-build-operator"),
+		Recorder: mgr.GetEventRecorder("rhoai-build-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RHOAIBuild")
 		os.Exit(1)

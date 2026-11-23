@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/tools/events"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -20,7 +20,7 @@ import (
 type RHOAIBuildReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Recorder events.EventRecorder
 }
 
 // The resource represents the cluster's single managed installation;
@@ -134,7 +134,7 @@ func (r *RHOAIBuildReconciler) block(ctx context.Context, b *rhoaiv1alpha1.RHOAI
 	if err := r.Status().Update(ctx, b); err != nil {
 		return err
 	}
-	r.Recorder.Event(b, corev1.EventTypeWarning, reason, message)
+	r.Recorder.Eventf(b, nil, corev1.EventTypeWarning, reason, "Reconcile", message)
 	return nil
 }
 
