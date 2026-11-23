@@ -1,0 +1,219 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: rhoaibuilds.dev.rhoai.openshift.io
+spec:
+  group: dev.rhoai.openshift.io
+  names:
+    kind: RHOAIBuild
+    listKind: RHOAIBuildList
+    plural: rhoaibuilds
+    singular: rhoaibuild
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.phase
+      name: Phase
+      type: string
+    - jsonPath: .spec.version
+      name: Version
+      type: string
+    - jsonPath: .spec.buildType
+      name: BuildType
+      type: string
+    - jsonPath: .status.installedVersion
+      name: Installed
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: |-
+          RHOAIBuild is the cluster's managed RHOAI installation: apply one
+          resource to install the requested build, and optionally keep it
+          current on its stream. Catalog discovery, OLM wiring, and InstallPlan
+          approval are controller implementation details.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: |-
+              RHOAIBuildSpec defines the desired state of RHOAIBuild: which RHOAI
+              build the cluster should run, and whether the operator follows the
+              stream or keeps the selected build.
+            properties:
+              automaticUpdates:
+                default: false
+                description: |-
+                  AutomaticUpdates follows newer builds in the requested stream,
+                  checking daily once the installation is Ready. Defaults to false.
+                  Incompatible with fbcDigest.
+                type: boolean
+              buildType:
+                default: ci
+                description: |-
+                  BuildType selects the build stream for the requested version:
+                  ci, nightly, ea, or ga. Defaults to ci.
+                enum:
+                - ci
+                - nightly
+                - ea
+                - ga
+                type: string
+              bundleDigest:
+                description: |-
+                  BundleDigest is an optional cross-check on FBCDigest: the pinned
+                  FBC must select this operator bundle digest, otherwise the request
+                  is Blocked before any cluster change.
+                pattern: ^sha256:[a-f0-9]{64}$
+                type: string
+              fbcDigest:
+                description: |-
+                  FBCDigest requests one exact build by the immutable digest of its
+                  file-based catalog, bypassing stream resolution. A bare sha256
+                  digest is the normal form; the controller supplies the registry
+                  and repository. Incompatible with automaticUpdates.
+                pattern: ^sha256:[a-f0-9]{64}$
+                type: string
+              pullSecretRef:
+                description: |-
+                  PullSecretRef references a Secret in this operator's namespace
+                  holding registry credentials for reading pre-release artifacts
+                  (quay.io/rhoai FBC fragments and bundles). Needed for ci, nightly,
+                  and ea builds unless the cluster already has sufficient registry
+                  credentials.
+                properties:
+                  name:
+                    description: name is unique within a namespace to reference a
+                      secret resource.
+                    type: string
+                  namespace:
+                    description: namespace defines the space within which the secret
+                      name must be unique.
+                    type: string
+                type: object
+                x-kubernetes-map-type: atomic
+              version:
+                description: |-
+                  Version is the RHOAI release stream to install, such as "3.6".
+                  Exact patch versions are allowed for GA builds, e.g. "3.6.2".
+                minLength: 1
+                type: string
+            required:
+            - version
+            type: object
+          status:
+            description: RHOAIBuildStatus is the observed state of a RHOAIBuild.
+            properties:
+              bundleDigest:
+                description: BundleDigest is the digest of the installed operator
+                  bundle.
+                type: string
+              conditions:
+                description: |-
+                  Conditions explain reconciliation progress: Resolving, Installing,
+                  Updating, Ready, and Blocked. A stuck build explains itself here.
+                items:
+                  description: Condition contains details for one aspect of the current
+                    state of this API Resource.
+                  properties:
+                    lastTransitionTime:
+                      description: |-
+                        lastTransitionTime is the last time the condition transitioned from one status to another.
+                        This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.
+                      format: date-time
+                      type: string
+                    message:
+                      description: |-
+                        message is a human readable message indicating details about the transition.
+                        This may be an empty string.
+                      maxLength: 32768
+                      type: string
+                    observedGeneration:
+                      description: |-
+                        observedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      minimum: 0
+                      type: integer
+                    reason:
+                      description: |-
+                        reason contains a programmatic identifier indicating the reason for the condition's last transition.
+                        Producers of specific condition types may define expected values and meanings for this field,
+                        and whether the values are considered a guaranteed API.
+                        The value should be a CamelCase string.
+                        This field may not be empty.
+                      maxLength: 1024
+                      minLength: 1
+                      pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                      type: string
+                    status:
+                      description: status of the condition, one of True, False, Unknown.
+                      enum:
+                      - "True"
+                      - "False"
+                      - Unknown
+                      type: string
+                    type:
+                      description: type of condition in CamelCase or in foo.example.com/CamelCase.
+                      maxLength: 316
+                      pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - message
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+              fbcDigest:
+                description: FBCDigest is the digest of the installed file-based catalog.
+                type: string
+              installedVersion:
+                description: |-
+                  InstalledVersion is the RHOAI version reported by the installed
+                  operator.
+                type: string
+              lastSuccessfulUpdate:
+                description: |-
+                  LastSuccessfulUpdate is when the installation last reached Ready
+                  for the current identity.
+                format: date-time
+                type: string
+              nextCheck:
+                description: |-
+                  NextCheck is when the controller will next look for a newer build
+                  when automaticUpdates is enabled.
+                format: date-time
+                type: string
+              phase:
+                description: Phase is the current reconciliation phase.
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

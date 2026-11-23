@@ -1,0 +1,12 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rhoai-build-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rhoai-build-operator
+subjects:
+  - kind: ServiceAccount
+    name: rhoai-build-operator
+    namespace: rhoai-build-operator

@@ -1,0 +1,10 @@
+apiVersion: dev.rhoai.openshift.io/v1alpha1
+kind: RHOAIBuild
+metadata:
+  name: default
+spec:
+  version: "3.6"
+  buildType: nightly
+  automaticUpdates: false
+  # pullSecretRef:
+  #   name: rhoai-quay-readonly
